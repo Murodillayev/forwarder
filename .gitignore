@@ -1,3 +1,4 @@
 /src/main/resources/sessions/
 /.idea/
 /target/
+/src/main/resources/application.yml
