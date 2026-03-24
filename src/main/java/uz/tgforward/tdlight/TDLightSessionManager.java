@@ -43,10 +43,10 @@ import java.util.zip.ZipOutputStream;
 public class TDLightSessionManager {
 
     private final R2Service r2Service;
-    @Value("${tdlight.api-id:31578436}")
+    @Value("${tdlight.api-id}")
     private int apiId;
 
-    @Value("${tdlight.api-hash:0923d00b29c46473a406045c789c9f20}")
+    @Value("${tdlight.api-hash}")
     private String apiHash;
 
     @Value("${tdlight.sessions-dir}")
