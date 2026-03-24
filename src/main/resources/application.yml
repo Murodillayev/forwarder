@@ -1,10 +1,8 @@
 spring:
   datasource:
-    # URL ichidan neondb_owner:npg_... qismini butunlay olib tashladik
-    url: jdbc:postgresql://ep-calm-bonus-an55v10d-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require
-    username: neondb_owner
-    password: npg_8MXsbq1iYFha
-    driver-class-name: org.postgresql.Driver
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/tgforward}
+    username: ${DB_USERNAME:macbookpro}
+    password: ${DB_PASSWORD:19801980}
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
