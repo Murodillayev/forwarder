@@ -30,16 +30,16 @@ server:
 
 telegram:
   bot:
-    token: ${TG_BOT_TOKEN:8481149034:AAEBaaP4Bbc-qM25Ftgn3HsOVTUOUEvKVoI}
+    token: ${TG_BOT_TOKEN}
 
 tdlight:
-  api-id: 31578436         # my.telegram.org dan olinadi
-  api-hash: 0923d00b29c46473a406045c789c9f20      # my.telegram.org dan olinadi
+  api-id: ${TD_LIGHT_API_ID}         # my.telegram.org dan olinadi
+  api-hash: ${TD_LIGHT_API_HASH}      # my.telegram.org dan olinadi
   sessions-dir: ${TD_SESSIONS_DIR:./sessions} # session fayllari
 
 app:
   # Telegram Login Widget hash tekshirish uchun (token bilan bir xil)
-  telegram-bot-token: ${TG_BOT_TOKEN:8481149034:AAEBaaP4Bbc-qM25Ftgn3HsOVTUOUEvKVoI}
+  telegram-bot-token: ${TG_BOT_TOKEN}
   free-plan-max-configs: 10
 
 scheduler:
