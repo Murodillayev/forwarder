@@ -26,7 +26,7 @@ spring:
     timeout: 24h
 
 server:
-  port: 8080
+  port: 8000
 
 telegram:
   bot:
@@ -46,8 +46,6 @@ scheduler:
   watcher:
     interval-ms: 30000
     max-messages-per-run: 10
-server:
-  port: 8000
 
 
 
