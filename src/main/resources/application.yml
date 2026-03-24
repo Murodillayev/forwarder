@@ -26,7 +26,7 @@ spring:
     timeout: 24h
 
 server:
-  port: 8000
+  port: 8080
 
 telegram:
   bot:
