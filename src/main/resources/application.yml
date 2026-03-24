@@ -29,7 +29,7 @@ server:
 
 telegram:
   bot:
-    token: ${TG_BOT_TOKEN:8481149034:AAEBaaP4Bbc-qM25Ftgn3HsOVTUOUEvKVoI}
+    token: ${TG_BOT_TOKEN:8476604088:AAEbZOvA2BMM-je0QN5lQCgJPcQEtPRJmQk}
 
 tdlight:
   api-id: ${TD_LIGHT_API_ID:31578436}         # my.telegram.org dan olinadi
@@ -38,7 +38,7 @@ tdlight:
 
 app:
   # Telegram Login Widget hash tekshirish uchun (token bilan bir xil)
-  telegram-bot-token: ${TG_BOT_TOKEN:8481149034:AAEBaaP4Bbc-qM25Ftgn3HsOVTUOUEvKVoI}
+  telegram-bot-token: ${TG_BOT_TOKEN:8476604088:AAEbZOvA2BMM-je0QN5lQCgJPcQEtPRJmQk}
   free-plan-max-configs: 10
 
 scheduler:

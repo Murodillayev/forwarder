@@ -141,17 +141,25 @@ public class ConfigController {
         // Phone login sonrasida currentUser sessiyada bo'lmasligi mumkin
         // Spring Security authentication dan olamiz
         var auth = org.springframework.security.core.context.SecurityContextHolder
-            .getContext().getAuthentication();
+                .getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
             throw new BusinessException("Sessiya tugagan. Qayta kiring.");
         }
 
         String principal = auth.getName(); // phone yoki telegramId
         var found = principal.startsWith("+")
-            ? configService.findUserByPhone(principal)
-            : configService.findUserByTelegramId(Long.parseLong(principal));
+                ? configService.findUserByPhone(principal)
+                : configService.findUserByTelegramId(Long.parseLong(principal));
 
         found.ifPresent(u -> session.setAttribute("currentUser", u));
         return found.orElseThrow(() -> new BusinessException("Sessiya tugagan. Qayta kiring."));
     }
 }
+
+// 1. HUB -> (DB save) -> save redis         |   agent (5 min)
+
+//hub [change pass -> save db , save cache ("req_id": {type: CHANGE_PASS, status: PENDING, data: {"oldPass":"123","userId":12321}) ]              agent -> fail -> call rolback (req_id)
+//hub [change pass -> save db , save cache ("req_id": {type: CHANGE_ROLE, status: PENDING, data: {"old_roles":[1,2,3],"userId":12321}) ]              agent -> fail -> call rolback (req_id)
+
+
+// 1 , 2, 3     -> revoke 1 , 2  -> 1 , 2
