@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Configlar — TG Forward Bot</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+    <link th:href="@{/css/app.css}" rel="stylesheet"/>
+</head>
+<body class="bg-light">
+
+<div th:replace="~{fragments/layout :: navbar}"></div>
+
+<div class="container py-4">
+
+    <!-- Flash xabarlar -->
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-2"></i>
+        <span th:text="${success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-semibold mb-0">Configlar</h4>
+            <p class="text-muted small mb-0">
+                Har bir config bir kanaldan boshqasiga post uzatadi
+            </p>
+        </div>
+        <a th:href="@{/configs/new}" class="btn btn-dark">
+            <i class="bi bi-plus-lg me-1"></i> Yangi config
+        </a>
+    </div>
+
+    <!-- Bo'sh holat -->
+    <div th:if="${#lists.isEmpty(configs)}" class="text-center py-5">
+        <div class="text-muted mb-3">
+            <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+        </div>
+        <h6 class="text-muted">Hali config yo'q</h6>
+        <p class="text-muted small">Yangi config yarating va botni kanallarga admin qiling</p>
+        <a th:href="@{/configs/new}" class="btn btn-dark mt-2">
+            <i class="bi bi-plus-lg me-1"></i> Birinchi config yaratish
+        </a>
+    </div>
+
+    <!-- Config ro'yxati -->
+    <div th:unless="${#lists.isEmpty(configs)}" class="row g-3">
+        <div th:each="config : ${configs}" class="col-12">
+            <div class="card border-0 shadow-sm config-card"
+                 th:classappend="${config.active} ? 'border-start border-success border-3' : 'border-start border-secondary border-3'">
+                <div class="card-body">
+                    <div class="row align-items-center">
+
+                        <!-- Status badge + kanallar -->
+                        <div class="col-md-5">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span th:if="${config.active}"
+                                      class="badge bg-success-subtle text-success">
+                                    <i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i>Aktiv
+                                </span>
+                                <span th:unless="${config.active}"
+                                      class="badge bg-secondary-subtle text-secondary">
+                                    <i class="bi bi-circle me-1" style="font-size:0.5rem;"></i>To'xtatilgan
+                                </span>
+                                <span class="badge bg-light text-dark border"
+                                      th:text="${config.patternType}">FORMAT_A</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 mt-2">
+                                <code class="bg-light px-2 py-1 rounded small"
+                                      th:text="${config.sourceChannel}">@source</code>
+                                <i class="bi bi-arrow-right text-muted"></i>
+                                <code class="bg-light px-2 py-1 rounded small"
+                                      th:text="${config.targetChannel}">@target</code>
+                            </div>
+                        </div>
+
+                        <!-- Markup -->
+                        <div class="col-md-2 text-center">
+                            <div class="text-muted small">Markup</div>
+                            <div class="fw-semibold fs-5 text-success">
+                                +<span th:text="${config.markupPercent}">20</span>%
+                            </div>
+                        </div>
+
+                        <!-- Header/Footer preview -->
+                        <div class="col-md-3">
+                            <div th:if="${config.headerText != null and !config.headerText.isBlank()}"
+                                 class="text-muted small text-truncate">
+                                <i class="bi bi-text-left me-1"></i>
+                                <span th:text="${config.headerText}"></span>
+                            </div>
+                            <div class="text-muted small" style="font-size:0.75rem;">
+                                Yaratildi:
+                                <span th:text="${#temporals.format(config.createdAt, 'dd.MM.yyyy')}"></span>
+                            </div>
+                        </div>
+
+                        <!-- Amallar -->
+                        <div class="col-md-2 text-end">
+                            <div class="d-flex gap-1 justify-content-end flex-wrap">
+
+                                <!-- Toggle aktiv/inaktiv -->
+                                <form th:action="@{/configs/{id}/toggle(id=${config.id})}" method="post">
+                                    <input type="hidden" name="active" th:value="${!config.active}"/>
+                                    <button type="submit"
+                                            th:class="${config.active} ? 'btn btn-sm btn-outline-warning' : 'btn btn-sm btn-outline-success'"
+                                            th:title="${config.active} ? 'To\'xtatish' : 'Yoqish'">
+                                        <i th:class="${config.active} ? 'bi bi-pause-fill' : 'bi bi-play-fill'"></i>
+                                    </button>
+                                </form>
+
+                                <!-- Tahrirlash -->
+                                <a th:href="@{/configs/{id}/edit(id=${config.id})}"
+                                   class="btn btn-sm btn-outline-secondary" title="Tahrirlash">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+
+                                <!-- O'chirish -->
+                                <form th:action="@{/configs/{id}/delete(id=${config.id})}" method="post"
+                                      onsubmit="return confirm('Bu configni o\'chirishga ishonchingiz komilmi?')">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="O'chirish">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plan info (FREE) -->
+    <div th:if="${user.planType.name() == 'FREE'}"
+         class="alert alert-light border mt-4 d-flex align-items-center gap-3">
+        <i class="bi bi-info-circle text-muted fs-5"></i>
+<!--        <div>-->
+<!--            <strong>Free plan:</strong> maksimal 10 ta config.-->
+<!--            PRO planga o'tib cheksiz config yarating.-->
+<!--        </div>-->
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

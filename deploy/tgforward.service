@@ -1,0 +1,35 @@
+[Unit]
+Description=TG Forward Bot - Spring Boot SaaS
+After=network.target postgresql.service redis.service
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=tgforward
+Group=tgforward
+
+WorkingDirectory=/opt/tgforward
+
+# Environment faylidan o'qiydi (parollar shu yerda)
+EnvironmentFile=/etc/tgforward/tgforward.env
+
+ExecStart=/usr/bin/java \
+  -Xms256m \
+  -Xmx512m \
+  -jar /opt/tgforward/app.jar \
+  --spring.config.location=file:/etc/tgforward/application.yml
+
+# Crash bo'lsa qayta ishga tushiradi
+Restart=on-failure
+RestartSec=10s
+
+# Log
+StandardOutput=append:/var/log/tgforward/app.log
+StandardError=append:/var/log/tgforward/error.log
+
+# Xavfsizlik
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

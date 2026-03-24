@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.0.2</version>
+        <relativePath/>
+    </parent>
+    <groupId>uz.tgforward</groupId>
+    <artifactId>tg-forward-bot</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <properties>
+        <java.version>21</java.version>
+        <tdlight.version>3.4.4+td.1.8.52</tdlight.version>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>mchv</id>
+            <name>MCHV Apache Maven Packages</name>
+            <url>https://mvn.mchv.eu/repository/mchv/</url>
+        </repository>
+    </repositories>
+
+    <!--
+        BOM (Bill of Materials) — barcha TDLight dependency versiyalarini
+        bir joyda boshqaradi. Har bir dependency ga version yozish shart emas.
+    -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>it.tdlight</groupId>
+                <artifactId>tdlight-java-bom</artifactId>
+                <version>${tdlight.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- Spring MVC + Thymeleaf -->
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-web</artifactId></dependency>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-thymeleaf</artifactId></dependency>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-data-jpa</artifactId></dependency>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-security</artifactId></dependency>
+        <dependency><groupId>org.thymeleaf.extras</groupId><artifactId>thymeleaf-extras-springsecurity6</artifactId></dependency>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-validation</artifactId></dependency>
+
+        <!-- PostgreSQL -->
+        <dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><scope>runtime</scope></dependency>
+
+        <!-- Telegram Bot API (maqsad kanalga yuborish uchun) -->
+        <dependency><groupId>org.telegram</groupId><artifactId>telegrambots-springboot-longpolling-starter</artifactId><version>7.2.1</version></dependency>
+        <dependency><groupId>org.telegram</groupId><artifactId>telegrambots-client</artifactId><version>7.2.1</version></dependency>
+
+        <!--
+            TDLight-Java (MTProto user client — private kanal o'qish uchun)
+            BOM orqali version boshqariladi — bu yerda version yozilmaydi.
+        -->
+        <dependency>
+            <groupId>it.tdlight</groupId>
+            <artifactId>tdlight-java</artifactId>
+            <!-- version BOM dan keladi -->
+        </dependency>
+
+        <dependency>
+            <groupId>it.tdlight</groupId>
+            <artifactId>tdlight-natives</artifactId>
+            <classifier>macos_arm64</classifier>
+        </dependency>
+
+        <!-- Linux server uchun (production) -->
+        <dependency>
+            <groupId>it.tdlight</groupId>
+            <artifactId>tdlight-natives</artifactId>
+            <classifier>linux_amd64_gnu_ssl3</classifier>
+        </dependency>
+
+        <!--
+            Natives: Linux AMD64, OpenSSL 3 (Ubuntu 22.04+)
+            Ubuntu 20.04 ishlatilsa: linux_amd64_gnu_ssl1
+            Classifier variantlari:
+              linux_amd64_gnu_ssl1   — Ubuntu 20.04, Debian 11
+              linux_amd64_gnu_ssl3   — Ubuntu 22.04+, Debian 12
+              linux_amd64_clang_ssl3 — muqobil
+              macos_amd64            — macOS Intel (development uchun)
+              macos_arm64            — macOS Apple Silicon (development uchun)
+        -->
+        <dependency>
+            <groupId>it.tdlight</groupId>
+            <artifactId>tdlight-natives</artifactId>
+            <classifier>linux_amd64_gnu_ssl3</classifier>
+            <!-- version BOM dan keladi -->
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency><groupId>org.projectlombok</groupId><artifactId>lombok</artifactId><optional>true</optional></dependency>
+
+        <!-- Test -->
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes><exclude><groupId>org.projectlombok</groupId><artifactId>lombok</artifactId></exclude></excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title th:text="${editMode} ? 'Tahrirlash — TG Forward Bot' : 'Yangi config — TG Forward Bot'">Config</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+    <link th:href="@{/css/app.css}" rel="stylesheet"/>
+</head>
+<body class="bg-light">
+
+<div th:replace="~{fragments/layout :: navbar}"></div>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a th:href="@{/configs}" class="text-decoration-none">Configlar</a>
+                    </li>
+                    <li class="breadcrumb-item active"
+                        th:text="${editMode} ? 'Tahrirlash' : 'Yangi config'">Yangi config</li>
+                </ol>
+            </nav>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="mb-0 fw-semibold">
+                        <i class="bi bi-gear me-2"></i>
+                        <span th:text="${editMode} ? 'Configni tahrirlash' : 'Yangi config yaratish'">Config</span>
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+
+                    <!-- Xabar -->
+                    <div th:if="${error}" class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <span th:text="${error}"></span>
+                    </div>
+
+                    <!-- Form -->
+                    <form th:action="${editMode} ? @{/configs/{id}(id=${config.id})} : @{/configs}"
+                          th:object="${config}"
+                          method="post">
+
+                        <!-- Kanallar -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <label class="form-label fw-medium">
+                                    <i class="bi bi-arrow-right-circle me-1 text-muted"></i>
+                                    Manba kanal
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <input type="text"
+                                           class="form-control font-monospace"
+                                           th:field="*{sourceChannel}"
+                                           placeholder="-1001234567890"
+                                           required/>
+                                </div>
+                                <div class="form-text">
+                                    Private kanal uchun <strong>Chat ID</strong> kiriting
+                                    (masalan: <code>-1001234567890</code>).
+                                    ID ni
+                                    <a th:href="@{/session/chats}" target="_blank">Session → Kanallarni yuklash</a>
+                                    dan oling.
+                                    Public kanal uchun <code>@username</code> ham ishlaydi.
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-medium">
+                                    <i class="bi bi-arrow-left-circle me-1 text-muted"></i>
+                                    Maqsad kanal
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text text-muted">@</span>
+                                    <input type="text"
+                                           class="form-control"
+                                           th:field="*{targetChannel}"
+                                           placeholder="mening_do_kon"
+                                           required/>
+                                </div>
+                                <div class="form-text">
+                                    Bot bu kanalga <strong>admin</strong> bo'lishi shart (post yuborish uchun)
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Markup -->
+                        <div class="mb-4">
+                            <label class="form-label fw-medium">
+                                <i class="bi bi-percent me-1 text-muted"></i>
+                                Markup foizi
+                                <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group" style="max-width: 200px;">
+                                <input type="number"
+                                       class="form-control"
+                                       th:field="*{markupPercent}"
+                                       min="0" max="500" step="0.5"
+                                       required/>
+                                <span class="input-group-text">%</span>
+                            </div>
+                            <div class="form-text">Masalan: 20 → narx 20% ga oshadi</div>
+                        </div>
+
+                        <!-- Pattern tanlash -->
+                        <div class="mb-4">
+                            <label class="form-label fw-medium">
+                                <i class="bi bi-regex me-1 text-muted"></i>
+                                Post formati (pattern)
+                                <span class="text-danger">*</span>
+                            </label>
+
+                            <div class="row g-2">
+                                <div class="col-12" th:each="pt : ${patternTypes}">
+                                    <div class="form-check pattern-option p-3 border rounded"
+                                         th:classappend="${config.patternType == pt} ? ' border-dark bg-dark bg-opacity-10' : ''">
+                                        <input class="form-check-input"
+                                               type="radio"
+                                               th:id="${'pt_' + pt.name()}"
+                                               th:field="*{patternType}"
+                                               th:value="${pt.name()}"
+                                               onchange="toggleCustomPattern(this.value)"/>
+                                        <label class="form-check-label w-100"
+                                               th:for="${'pt_' + pt.name()}">
+                                            <div class="fw-medium" th:text="${pt.name()}">FORMAT_A</div>
+                                            <div class="text-muted small mt-1">
+                                                <span th:if="${pt.name() == 'FORMAT_A'}">
+                                                    <code>H119 1*4 26</code>
+                                                    → MODEL&nbsp; K*D&nbsp; NARX (oxirgi son narx)
+                                                </span>
+                                                <span th:if="${pt.name() == 'FORMAT_B'}">
+                                                    <code>Kidilo D9 - 1*1*61</code>
+                                                    → MODEL - K*D*NARX
+                                                </span>
+                                                <span th:if="${pt.name() == 'CUSTOM'}">
+                                                    O'z regex patterningizni yozing
+                                                    (<code>(?&lt;model&gt;...)</code> va
+                                                    <code>(?&lt;price&gt;...)</code> majburiy)
+                                                </span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Custom pattern (faqat CUSTOM tanlanganda ko'rinadi) -->
+                        <div class="mb-4" id="customPatternBlock"
+                             th:style="${config.patternType != null and config.patternType.name() == 'CUSTOM'} ? 'display:block' : 'display:none'">
+                            <label class="form-label fw-medium">
+                                Custom regex pattern
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input type="text"
+                                   class="form-control font-monospace"
+                                   th:field="*{customPattern}"
+                                   placeholder="^(?&lt;model&gt;.+?)\s+-\s+(?&lt;price&gt;\d+)$"/>
+                            <div class="form-text">
+                                Named group <code>(?&lt;model&gt;...)</code> va
+                                <code>(?&lt;price&gt;...)</code> majburiy.
+                                Multiline flag avtomatik qo'shiladi.
+                            </div>
+                        </div>
+
+                        <!-- Header / Footer -->
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">
+                                <i class="bi bi-text-paragraph me-1 text-muted"></i>
+                                Header matni
+                                <span class="text-muted fw-normal">(ixtiyoriy)</span>
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   th:field="*{headerText}"
+                                   placeholder="🔥 Yangi keldi!"/>
+                            <div class="form-text">Post boshiga qo'shiladi</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-medium">
+                                <i class="bi bi-text-paragraph me-1 text-muted"></i>
+                                Footer matni
+                                <span class="text-muted fw-normal">(ixtiyoriy)</span>
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   th:field="*{footerText}"
+                                   placeholder="📦 Buyurtma: @admin"/>
+                            <div class="form-text">Post oxiriga qo'shiladi</div>
+                        </div>
+
+                        <!-- Tugmalar -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-dark px-4">
+                                <i class="bi bi-check-lg me-1"></i>
+                                <span th:text="${editMode} ? 'Saqlash' : 'Yaratish'">Yaratish</span>
+                            </button>
+                            <a th:href="@{/configs}" class="btn btn-outline-secondary">
+                                Bekor qilish
+                            </a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+            <!-- Yordam -->
+            <div class="alert alert-light border mt-3">
+                <i class="bi bi-lightbulb text-warning me-2"></i>
+                <strong>Eslatma:</strong> Config saqlangandan so'ng botni
+                <strong>manba</strong> va <strong>maqsad</strong> kanallariga admin qiling,
+                keyin ro'yxatda <i class="bi bi-play-fill"></i> tugma bilan aktivlashtiring.
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/app.js}"></script>
+<script>
+function toggleCustomPattern(val) {
+    document.getElementById('customPatternBlock').style.display =
+        val === 'CUSTOM' ? 'block' : 'none';
+}
+</script>
+</body>
+</html>
