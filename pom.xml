@@ -11,7 +11,7 @@
     </parent>
     <groupId>uz.tgforward</groupId>
     <artifactId>tg-forward-bot</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.1</version>
     <properties>
         <java.version>21</java.version>
         <tdlight.version>3.4.4+td.1.8.52</tdlight.version>

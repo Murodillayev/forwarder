@@ -37,10 +37,10 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class TDLightSessionManager {
 
-    @Value("${tdlight.api-id}")
+    @Value("${tdlight.api-id:31578436}")
     private int apiId;
 
-    @Value("${tdlight.api-hash}")
+    @Value("${tdlight.api-hash:0923d00b29c46473a406045c789c9f20}")
     private String apiHash;
 
     @Value("${tdlight.sessions-dir}")
