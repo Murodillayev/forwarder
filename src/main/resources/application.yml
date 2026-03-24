@@ -34,7 +34,7 @@ telegram:
 tdlight:
   api-id: 31578436         # my.telegram.org dan olinadi
   api-hash: 0923d00b29c46473a406045c789c9f20      # my.telegram.org dan olinadi
-  sessions-dir: ${TD_SESSIONS_DIR:/Users/macbookpro/Downloads/tgforwarderbot/src/main/resources/sessions} # session fayllari
+  sessions-dir: ${TD_SESSIONS_DIR:./sessions} # session fayllari
 
 app:
   # Telegram Login Widget hash tekshirish uchun (token bilan bir xil)
@@ -45,6 +45,8 @@ scheduler:
   watcher:
     interval-ms: 30000
     max-messages-per-run: 10
+
+
 
 #logging:
 #  level:

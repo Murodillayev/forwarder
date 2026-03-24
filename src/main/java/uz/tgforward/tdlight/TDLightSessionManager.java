@@ -21,8 +21,10 @@ import uz.tgforward.repository.ForwardConfigRepository;
 import uz.tgforward.repository.ProcessedPostRepository;
 import uz.tgforward.repository.UserSessionRepository;
 import uz.tgforward.service.PostParserService;
+import uz.tgforward.service.R2Service;
 import uz.tgforward.service.TelegramPublisherService;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -31,12 +33,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class TDLightSessionManager {
 
+    private final R2Service r2Service;
     @Value("${tdlight.api-id:31578436}")
     private int apiId;
 
@@ -72,31 +78,47 @@ public class TDLightSessionManager {
         clientFactory = new SimpleTelegramClientFactory();
         Files.createDirectories(Paths.get(sessionsDir));
 
-        // Restart da:
-        // ACTIVE → tiklanadi (session fayli diskda bor)
-        // PENDING_CODE / PENDING_2FA → INACTIVE qilinadi
-        //   (kod muddati o'tgan, foydalanuvchi qayta boshlashi kerak)
+        // 1. R2-DAN TIKLASH (RESTORE)
         List<UserSession> allSessions = sessionRepo.findAll();
+        for (UserSession s : allSessions) {
+            String userId = s.getOwner().getId().toString();
+            String zipName = userId + ".zip";
+            Path zipPath = Paths.get(sessionsDir, zipName);
+            Path userFolder = Paths.get(sessionsDir, userId);
 
+            try {
+                // R2-dan yuklab olish
+                r2Service.download(zipName, zipPath);
+
+                if (Files.exists(zipPath)) {
+                    log.info("R2-dan sessiya topildi, tiklanmoqda: {}", userId);
+                    if (Files.exists(userFolder)) {
+                        deleteSessionFiles(s.getOwner().getId()); // Tozalab olamiz
+                    }
+                    Files.createDirectories(userFolder);
+                    unzip(zipPath, userFolder); // Arxivdan chiqarish
+                    Files.delete(zipPath); // ZIP-ni o'chirish
+                }
+            } catch (Exception e) {
+                log.warn("Sessiya R2-da topilmadi yoki yuklashda xato: userId={}", userId);
+            }
+        }
+
+        // 2. TDLight-ni tiklash (Mavjud mantiq)
         for (UserSession s : allSessions) {
             if (s.getStatus() == SessionStatus.ACTIVE) {
                 try {
                     buildClient(s.getOwner().getId(), s.getPhoneNumber());
-                    log.info("Session tiklandi: userId={}, phone={}",
-                            s.getOwner().getId(), s.getPhoneNumber());
+                    log.info("Session tiklandi: userId={}, phone={}", s.getOwner().getId(), s.getPhoneNumber());
                 } catch (Exception e) {
                     log.error("Session tiklab bo'lmadi [{}]: {}", s.getOwner().getId(), e.getMessage());
                     s.setStatus(SessionStatus.INACTIVE);
-                    s.setErrorMessage("Restart da tiklab bo'lmadi");
                     sessionRepo.save(s);
                 }
-            } else if (s.getStatus() == SessionStatus.PENDING_CODE
-                    || s.getStatus() == SessionStatus.PENDING_2FA) {
-                // Kod muddati o'tgan — foydalanuvchi qayta boshlashi kerak
+            } else if (s.getStatus() == SessionStatus.PENDING_CODE || s.getStatus() == SessionStatus.PENDING_2FA) {
                 s.setStatus(SessionStatus.INACTIVE);
-                s.setErrorMessage("Server qayta ishga tushdi. Qayta ulanish kerak.");
+                s.setErrorMessage("Server restart bo'ldi. Qayta ulaning.");
                 sessionRepo.save(s);
-                log.info("PENDING session INACTIVE qilindi (restart): userId={}", s.getOwner().getId());
             }
         }
     }
@@ -104,14 +126,33 @@ public class TDLightSessionManager {
     @PreDestroy
     public void shutdown() {
         shuttingDown = true;
-        log.info("TDLight shutting down...");
+        log.info("TDLight shutting down and backing up to R2...");
 
-        // Clientlarni yopamiz
+        // 1. Clientlarni yopish
         clients.values().forEach(c -> { try { c.close(); } catch (Exception ignored) {} });
 
-        // Muhim: eventlar async keladi — biroz kutamiz
-        // Shunda Closing/Closed eventlari shuttingDown=true da ishlaydi
-        try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
+        // TDLib fayllarni diskka yozib bo'lishi uchun biroz kutamiz
+        try { Thread.sleep(3000); } catch (InterruptedException ignored) {}
+
+        // 2. R2-GA SAQLASH (BACKUP)
+        clients.keySet().forEach(userId -> {
+            try {
+                Path userFolder = Paths.get(sessionsDir, userId.toString());
+                Path zipPath = Paths.get(sessionsDir, userId + ".zip");
+
+                if (Files.exists(userFolder)) {
+                    log.info("Sessiya ZIP qilinmoqda: {}", userId);
+                    zipDirectory(userFolder, zipPath);
+
+                    log.info("R2-ga yuklanmoqda: {}.zip", userId);
+                    r2Service.upload(userId + ".zip", zipPath);
+
+                    Files.deleteIfExists(zipPath); // Lokal ZIP-ni o'chiramiz
+                }
+            } catch (Exception e) {
+                log.error("R2-ga backup qilishda xato [{}]: {}", userId, e.getMessage());
+            }
+        });
 
         try { clientFactory.close(); } catch (Exception ignored) {}
         log.info("TDLight shutdown tugadi.");
@@ -533,5 +574,32 @@ public class TDLightSessionManager {
     private void closeClientSilent(UUID userId) {
         SimpleTelegramClient c = clients.remove(userId);
         if (c != null) { try { c.close(); } catch (Exception ignored) {} }
+    }
+
+    private void zipDirectory(Path source, Path target) throws IOException {
+        try (ZipOutputStream zs = new ZipOutputStream(Files.newOutputStream(target))) {
+            Files.walk(source)
+                    .filter(path -> !Files.isDirectory(path))
+                    .forEach(path -> {
+                        ZipEntry zipEntry = new ZipEntry(source.relativize(path).toString());
+                        try {
+                            zs.putNextEntry(zipEntry);
+                            Files.copy(path, zs);
+                            zs.closeEntry();
+                        } catch (IOException e) { log.error("Zip error: {}", e.getMessage()); }
+                    });
+        }
+    }
+
+    private void unzip(Path zipFile, Path targetDir) throws IOException {
+        try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(zipFile))) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                Path newPath = targetDir.resolve(entry.getName());
+                Files.createDirectories(newPath.getParent());
+                Files.copy(zis, newPath);
+                zis.closeEntry();
+            }
+        }
     }
 }

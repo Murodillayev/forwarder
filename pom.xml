@@ -66,6 +66,11 @@
             <artifactId>tdlight-java</artifactId>
             <!-- version BOM dan keladi -->
         </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>2.20.100</version>
+        </dependency>
 
         <dependency>
             <groupId>it.tdlight</groupId>
