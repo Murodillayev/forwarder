@@ -46,6 +46,8 @@ scheduler:
   watcher:
     interval-ms: 30000
     max-messages-per-run: 10
+server:
+  port: 8000
 
 
 
