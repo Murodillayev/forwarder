@@ -301,31 +301,38 @@
     const phoneInput = document.getElementById('phoneInput');
 
     phoneInput.addEventListener('input', function (e) {
-        let x = e.target.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,2})(\d{0,3})(\d{0,2})(\d{0,2})/);
+        // Faqat raqamlarni qoldiramiz
+        let input = e.target.value.replace(/\D/g, '');
 
-        // Agar raqam o'chirilsa va bo'sh bo'lsa
-        if (!x[1]) {
+        // Agar foydalanuvchi hamma narsani o'chirib tashlasa
+        if (input.length === 0) {
             e.target.value = '';
             return;
         }
 
-        // +998 ni majburiy qilish va formatlash
-        if (x[1] !== '998') {
-            e.target.value = '+998';
-        } else {
-            e.target.value = '+998' +
-                (x[2] ? ' (' + x[2] : '') +
-                (x[3] ? ') ' + x[3] : '') +
-                (x[4] ? '-' + x[4] : '') +
-                (x[5] ? '-' + x[5] : '');
+        // Har doim 998 bilan boshlanishini ta'minlash
+        if (!input.startsWith('998')) {
+            input = '998' + input;
         }
+
+        // Maksimal uzunlikni cheklash (+998 va 9 ta raqam = 12 ta raqam)
+        input = input.substring(0, 12);
+
+        // Yakuniy qiymatni + belgisi bilan birga yozish
+        e.target.value = '+' + input;
     });
 
-    // Foydalanuvchi inputga bosganda agar bo'sh bo'lsa +998 ni chiqarish
+    // Inputga bosganda avtomatik +998 chiqishi uchun
     phoneInput.addEventListener('focus', function (e) {
         if (!e.target.value) {
             e.target.value = '+998';
         }
+    });
+
+    // Kursorni har doim oxirida ushlab turish (ixtiyoriy, qulaylik uchun)
+    phoneInput.addEventListener('mouseup', function(e) {
+        const len = e.target.value.length;
+        e.target.setSelectionRange(len, len);
     });
 </script>
 </body>
